@@ -1,23 +1,25 @@
 import base64
-import re
-from turtledemo.penrose import start
 import json
+import re
+from pathlib import Path
 
-from kivy.properties import ObjectProperty
 from kivy.config import Config
+from kivy.properties import ObjectProperty
 
-
-Config.set('graphics', 'resizable', "0")
-Config.set('graphics', 'width', '640')
-Config.set('graphics', 'height', '480')
-Config.set('graphics', 'fullsscreen', '0')
+Config.set("graphics", "resizable", "0")
+Config.set("graphics", "width", "640")
+Config.set("graphics", "height", "480")
+Config.set("graphics", "fullsscreen", "0")
 Config.write()
 
 
 from kivymd.app import MDApp
+from kivymd.theming import ThemeManager
+from kivymd.uix.button import MDFillRoundFlatButton
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.textfield import MDTextField
-from kivymd.theming import ThemeManager
+from plyer import filechooser
 
 
 class CustomTextField(MDTextField):
@@ -38,6 +40,22 @@ class Container(MDScreen):
     input_field = ObjectProperty()
     output_field = ObjectProperty()
     save_to_file_button = ObjectProperty()
+    exit_manager = ObjectProperty()
+    select_path = ObjectProperty()
+    dialog = None
+
+    def _close_dialog(self, obj) -> None:
+        self.dialog.dismiss()
+        del self.dialog
+
+    def show_alert_dialog(self, text: str):
+        if not self.dialog:
+            self.dialog = MDDialog(
+                title="Alert",
+                buttons=[MDFillRoundFlatButton(text="OK", on_release=self._close_dialog), ],
+                text=text,
+            )
+        self.dialog.open()
 
     @staticmethod
     def convert_to_dict(key: str) -> dict:
@@ -52,7 +70,7 @@ class Container(MDScreen):
             "server_port": int(server_port),
             "local_port": 1080,
             "password": password,
-            "method": method
+            "method": method,
         }
         return converted_data
 
@@ -61,25 +79,38 @@ class Container(MDScreen):
             self.output_field.text = "Invalid input"
             self.output_field.error = True
             return
-        print(self.input_field.text)
+
         converted_data = self.convert_to_dict(self.input_field.text)
         self.output_field.set_text(self.output_field, json.dumps(converted_data, indent=4))
         self.save_to_file_button.disabled = False
 
-
     def save_json_to_file(self):
-        print("Save to file: ", self.input_field.text.lower())
+        try:
+            path = filechooser.choose_dir(title="Save JSON", multiple=False)
+            if path:
+                file_name = "server_info.json"
+                file_path = Path(path[0]).joinpath(file_name)
+                with open(file_path, "w") as file:
+                    file.write(self.output_field.text)
+                message = "Saved to %s" % file_path
+            else:
+                message = "No path selected! (Make sure that Cyrillic characters are not present in the path.)"
+        except UnicodeDecodeError:
+            message = "Error saving (Make sure that Cyrillic characters are not present in the path.)"
+        except Exception as e:
+            message = "Unknown error (%s)" % e
+
+        self.show_alert_dialog(message)
 
 
 class MainApp(MDApp):
-    title = 'Outline Key Converter'
+    title = "Outline Key Converter"
     theme_cls = ThemeManager()
     theme_cls.primary_palette = "Teal"
-
 
     def build(self):
         return Container()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     MainApp().run()
