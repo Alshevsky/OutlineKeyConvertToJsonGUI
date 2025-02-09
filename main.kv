@@ -1,0 +1,45 @@
+<Container>:
+    input_field: text_input
+    output_field: text_output
+    save_to_file_button: save_button
+
+    CustomTextField:
+        id: text_input
+        size_hint: .8, .1
+        hint_text: "Put your code here..."
+        pos_hint: {'center_x': .5, 'center_y': .8}
+        font_size: 14
+        required: True
+        multiline: False
+        mode: "fill"
+
+    MDFillRoundFlatButton:
+        size_hint: .2, .1
+        pos_hint: {'center_x': .5, 'center_y': .65}
+        text: "Convert"
+        text_color: "black"
+
+        on_press:
+            root.run_json_converter()
+
+    MDTextField:
+        id: text_output
+        size_hint: .8, .35
+        pos_hint: {'center_x': .5, 'center_y': .37}
+        readonly: True
+        multiline: True
+        font_size: 15
+        mode: "rectangle"
+        hint_text: "Result field"
+
+    MDFillRoundFlatButton:
+        id: save_button
+        style: "elevated"
+        pos_hint: {'center_x': .5, 'center_y': .1}
+        size_hint: .2, .1
+        text: "Save to file"
+        text_color: "black"
+        disabled: True
+
+        on_press:
+            root.save_json_to_file()
